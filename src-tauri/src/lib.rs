@@ -2,6 +2,40 @@ use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandEvent,Command};
 
 use std::io::{Error, ErrorKind};
+use std::net::UdpSocket;
+
+#[tauri::command]
+fn get_server_address() -> Option<String> {
+    // We create a UDP socket and "connect" it to a public IP.
+    // We don't actually send any packets - this just helps us
+    // determine which local interface would be used.
+    let socket = match UdpSocket::bind("0.0.0.0:0") {
+        Ok(socket) => socket,
+        Err(e) => {
+            eprintln!("error in get_server_address while binding address {}", e);
+            return None;
+        }
+    };
+    // Google's DNS server - we don't actually connect to it
+    match socket.connect("8.8.8.8:80") {
+        Ok(()) => (),
+        Err(e) => {
+            eprintln!("error in get_server_address while binding address {}", e);
+            return None;
+        }
+    };
+    
+    // Get the local address the socket would use
+    let local_addr = match socket.local_addr() {
+        Ok(addr) => addr,
+        Err(e) => {
+            eprintln!("error in get_server_address while binding address {}", e);
+            return None;
+        }
+    };
+
+    return Some(local_addr.ip().to_string());
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -47,7 +81,7 @@ pub fn run() {
         
         return Ok(());
     })
-        .invoke_handler(tauri::generate_handler![])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    .invoke_handler(tauri::generate_handler![get_server_address])
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
 }
