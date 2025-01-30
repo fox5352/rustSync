@@ -1,1 +1,8 @@
-@import "tailwindcss";
+a {
+  text-decoration: initial;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  background-color: inherit;
+}
