@@ -106,19 +106,22 @@ pub fn run() {
     let _sidecar_thread: Option<JoinHandle<()>> = None;
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .manage(session_state)
         .setup(move |_app| {
             let app = _app.handle().clone();
-            
+
             thread::spawn(move || {
                 'sidecar_check_loop: loop {
                     // Create the sidecar command.
                     let sidecar_command: Command = app
                         .shell()
                         .sidecar("server")
-                        .map_err(|_| Error::new(ErrorKind::Other, "failed to create sidecar".to_string()))
+                        .map_err(|_| {
+                            Error::new(ErrorKind::Other, "failed to create sidecar".to_string())
+                        })
                         .unwrap();
 
                     let mut sidecar_state = sidecar_state
@@ -139,7 +142,6 @@ pub fn run() {
                                         )
                                     })
                                     .expect("failed to spawn sidecar");
-
 
                                 sidecar_state.is_live = true;
                                 // sidecar_state.child = Some(_child);
@@ -193,7 +195,7 @@ pub fn run() {
 
             let window = _app.get_webview_window("main").unwrap();
 
-            window.on_window_event(move|event| {
+            window.on_window_event(move |event| {
                 if let WindowEvent::CloseRequested { .. } = event {
                     if let Some(sender) = cleanup_sidecar_state.lock().unwrap().sender.as_ref() {
                         sender.send(ServerActions::EndServer).unwrap();
@@ -201,7 +203,6 @@ pub fn run() {
                     // TODO:add thread clean up later
                 }
             });
-
 
             return Ok(());
         })

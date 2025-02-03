@@ -1,4 +1,4 @@
 export type StateError = {
   message: string;
-  colorCode: "warning" | "error" | "infomation";
+  colorCode: "warning" | "error" | "info";
 }

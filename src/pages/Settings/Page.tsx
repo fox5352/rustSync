@@ -1,54 +1,89 @@
 import { useEffect, useState } from "react";
+import { Alert, Box, CircularProgress, Container, Divider } from "@mui/material";
+
 import { StateError } from "../../type";
 
-import { getStorageItem } from "../../lib/storageManager";
+import ViewBox from "./ui/ViewBox";
+import { getSettings, Settings, SettingsKeys, updateSettings } from "../../lib/requests";
 
-export default function Settings() {
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [isError, setIsError] = useState<StateError | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const updateFunction = async (key: SettingsKeys, list: string[]) => {
+    const data = {
+      [key]: list,
+    }
+
+    try {
+      const settings = await updateSettings(data, true)
+      setSettings(settings);
+    } catch (e) {
+      console.error("Failed to update settings:", e);
+      setIsError({
+        message: "Failed to update settings",
+        colorCode: "error",
+      } as StateError);
+    }
+  }
 
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         setIsLoading(true);
-        // const serverAddr = "http://localhost:9090";
-        // const token = "testing";
-        const serverAddr = getStorageItem("serverAddress");
-        const token = getStorageItem("token");
+        setIsError(null);
+        const settings = await getSettings();
 
-        if (!serverAddr || !token)
-          throw new Error("failed to get server address=error");
-        // TODO: get setting from sidecar
-
-        const url = `${serverAddr}/api/settings`;
-        const headers = new Headers();
-        headers.append("Authorization", `Bearer ${token}`);
-
-        const options = {
-          method: "GET",
-          headers,
-        };
-        console.log(options);
-
-        const res = await fetch(url, options);
-        //
-        if (!res.ok)
-          throw new Error(`failed to fetch settings from server=error`);
-        //
-        const data = await res.json();
-        //
-        console.log(data);
+        setSettings(settings);
       } catch (e: any) {
-        const [message, code] = e.message.split("=");
         setIsError({
-          message,
-          colorCode: code,
+          message: e.message,
+          colorCode: "error",
         } as StateError);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchSettings();
   }, []);
 
-  return <div></div>;
+  return (
+    <>
+      {
+        isError ?
+          <Alert severity="error">{isError.message}</Alert>
+          : isLoading ? <Box sx={{
+            display: "flex", flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            p: 2,
+            my: 10,
+            textAlign: "center",
+          }}>
+            <CircularProgress size={78} />
+          </Box>
+            :
+            <Container id="testing" sx={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              width: "100%",
+              flexGrow: 1,
+              p: 2,
+              my: 4,
+              //   backgroundColor: "#f7f7f7", // Optional background color
+              borderRadius: "8px", // Optional: adds rounded corners
+              boxShadow: 3, // Optional: adds shadow for better visibility
+            }}>
+              <ViewBox label="Audio Paths" paths={settings?.audioPaths || []} updatedFunc={updateFunction} />
+              <Divider />
+              <ViewBox label="Image Paths" paths={settings?.imagePaths || []} updatedFunc={updateFunction} />
+            </Container>
+      }
+    </>
+  );
 }

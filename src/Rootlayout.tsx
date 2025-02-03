@@ -15,8 +15,14 @@ export default function Rootlayout() {
 
       if (res) {
         const [addr, query] = res.split("?");
-
         const token = query.split("=")[1];
+
+        // TODO: for testing
+
+        //const addr = "http://localhost:9090";
+        //const token = "testing";
+
+        console.log(addr, token)
 
         writeStorageItem("serverAddress", addr);
         writeStorageItem("token", token);

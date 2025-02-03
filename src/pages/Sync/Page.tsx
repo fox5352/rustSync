@@ -67,7 +67,7 @@ export default function Sync() {
             }}
             bgcolor="secondary"
           >
-            <Typography variant="body1" component={address ? "clipPath" : "p"}>
+            <Typography variant="body1" component={"p"}>
               {address ? address : "Ip not found"}
             </Typography>
           </Box>

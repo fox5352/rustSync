@@ -45,7 +45,7 @@ export default function Navbar() {
           {/* Button group of three buttons */}
           <ButtonGroup variant="outlined">
             {links.map((link, index) => (
-              <Link to={link.a}>
+              <Link to={link.a} key={index}>
                 <Button startIcon={link.icon}>{link.text}</Button>
               </Link>
             ))}
