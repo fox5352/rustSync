@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 
 import { Box, Container, Button, Typography } from "@mui/material";
@@ -7,18 +6,17 @@ import { Home } from "@mui/icons-material";
 import { QRCodeCanvas } from "qrcode.react";
 
 import { Link } from "react-router";
+import { getStorageItem } from "../../lib/storageManager";
 
 export default function Sync() {
   const [address, setAddress] = useState<string | null>(null);
 
-  const getIpv4Address = async () => {
-    const res: string | null = await invoke("get_server_address");
-
-    setAddress(res);
-  };
-
   useEffect(() => {
-    getIpv4Address();
+    const addr = getStorageItem("serverAddress");
+
+    if (addr) {
+      setAddress(addr);
+    }
   }, []);
 
   return (

@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Home from "./pages/Home/Page";
 import Rootlayout from "./Rootlayout";
 
-import "./App.css";
+import Home from "./pages/Home/Page";
 import Sync from "./pages/Sync/Page";
+import Settings from "./pages/Settings/Page";
+
+import "./App.css";
 
 function App() {
   return (
@@ -13,6 +15,7 @@ function App() {
         <Route path="/" element={<Rootlayout />}>
           <Route index element={<Home />} />
           <Route path="sync" element={<Sync />} />
+          <Route path="settings" element={<Settings />} />
 
           <Route path="*" element={<h2>Page Not Found</h2>} />
         </Route>

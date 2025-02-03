@@ -1,11 +1,22 @@
+use tauri_plugin_shell::process::{Command, CommandChild};
 use tauri_plugin_shell::ShellExt;
-use tauri_plugin_shell::process::{CommandEvent,Command};
+
+use tauri::{Manager, State, WindowEvent};
 
 use std::io::{Error, ErrorKind};
 use std::net::UdpSocket;
 
-#[tauri::command]
-fn get_server_address() -> Option<String> {
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread::{self, JoinHandle};
+
+use uuid::Uuid;
+
+#[derive(Debug)]
+struct Session {
+    token: String,
+}
+
+fn get_ipv4_addr() -> Option<String> {
     // We create a UDP socket and "connect" it to a public IP.
     // We don't actually send any packets - this just helps us
     // determine which local interface would be used.
@@ -24,7 +35,7 @@ fn get_server_address() -> Option<String> {
             return None;
         }
     };
-    
+
     // Get the local address the socket would use
     let local_addr = match socket.local_addr() {
         Ok(addr) => addr,
@@ -37,51 +48,164 @@ fn get_server_address() -> Option<String> {
     return Some(local_addr.ip().to_string());
 }
 
+#[tauri::command]
+fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
+    let session = match state.lock() {
+        Ok(data) => Some(data),
+        _ => None,
+    };
+
+    if let Some(session) = session {
+        let addr = get_ipv4_addr();
+
+        if let Some(addr) = addr {
+            let url = format!("http://{}:9090?token={}", addr, session.token);
+
+            return Some(url);
+        }
+    }
+
+    return None;
+}
+
+#[derive(Clone)]
+enum ServerActions {
+    StartSidecar,
+    StopSidecar,
+    EndServer,
+}
+
+#[derive(Default)]
+struct SidecarState {
+    is_live: bool,
+    child: Option<CommandChild>,
+    sender: Option<mpsc::Sender<ServerActions>>,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // ----------------------- session state initialize  -----------------------
+    let _uuid = Uuid::new_v4();
+    let session_state: Mutex<Session> = Mutex::new(Session {
+        token: _uuid.to_string().clone(),
+    });
+
+    // ----------------------- sidecar state initialize  -----------------------
+    let (rx, tx) = mpsc::channel::<ServerActions>();
+
+    let main_sidecar_state: Arc<Mutex<SidecarState>> = Arc::new(Mutex::new(SidecarState {
+        is_live: false,
+        child: None,
+        sender: Some(rx),
+    }));
+    let starter_sidecar_state = Arc::clone(&main_sidecar_state);
+    let cleanup_sidecar_state = Arc::clone(&main_sidecar_state);
+    let sidecar_state = Arc::clone(&main_sidecar_state);
+
+    // ----------------------- thread state initialize  -----------------------
+    let _sidecar_thread: Option<JoinHandle<()>> = None;
+
     tauri::Builder::default()
-    .plugin(tauri_plugin_shell::init())
-    .plugin(tauri_plugin_opener::init())
-    .setup(move |_app| {
-        let sidecar_command: Command = _app
-            .shell()
-            .sidecar("server")
-            .map_err(|_| { 
-                Error::new( 
-                    ErrorKind::Other,
-                    "failed to create sidecar".to_string()
-                )
-            })?;
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
+        .manage(session_state)
+        .setup(move |_app| {
+            let app = _app.handle().clone();
+            
+            thread::spawn(move || {
+                'sidecar_check_loop: loop {
+                    // Create the sidecar command.
+                    let sidecar_command: Command = app
+                        .shell()
+                        .sidecar("server")
+                        .map_err(|_| Error::new(ErrorKind::Other, "failed to create sidecar".to_string()))
+                        .unwrap();
 
-        let (mut rx, _child) = sidecar_command
-            .spawn()
-            .map_err(|_| { 
-            Error::new( 
-                ErrorKind::Other,
-                "failed to spawn sidecar".to_string()
-            )
-            })?;
+                    let mut sidecar_state = sidecar_state
+                        .lock()
+                        .expect("sidecar thread failed to lock state");
 
-        tauri::async_runtime::spawn(async move {
-            while let Some(event) = rx.recv().await {
-                // if let CommandEvent::Stdout(line_bytes) = event 
-                match event {
-                    CommandEvent::Stdout(line_bytes) => {
-                        let line = String::from_utf8_lossy(&line_bytes);
-                        println!("{}", line);
-                    },
-                    CommandEvent::Stderr(line_bytes) => {
-                        let line = String::from_utf8_lossy(&line_bytes);
-                        eprintln!("{}", line);
-                    },
-                    _=>{}
+                    match tx.try_recv() {
+                        Ok(msg) => match msg {
+                            ServerActions::StartSidecar => {
+                                // start server
+                                let (mut rx, _child) = sidecar_command
+                                    .env("TOKEN", _uuid.to_string())
+                                    .spawn()
+                                    .map_err(|_| {
+                                        Error::new(
+                                            ErrorKind::Other,
+                                            "failed to spawn sidecar".to_string(),
+                                        )
+                                    })
+                                    .expect("failed to spawn sidecar");
+
+
+                                sidecar_state.is_live = true;
+                                // sidecar_state.child = Some(_child);
+                            }
+                            ServerActions::StopSidecar => {
+                                // stop server
+                                if let Some(child) = sidecar_state.child.take() {
+                                    child.kill().expect("failed to kill sidecar");
+                                }
+                                sidecar_state.is_live = false;
+                            }
+                            ServerActions::EndServer => {
+                                if let Some(child) = sidecar_state.child.take() {
+                                    child.kill().expect("failed to kill sidecar");
+                                }
+                                sidecar_state.is_live = false;
+                                break 'sidecar_check_loop;
+                            }
+                        },
+                        _ => (),
+                    };
+
+                    // Drop the lock before sleeping
+                    drop(sidecar_state);
+                    thread::sleep(std::time::Duration::from_millis(1500));
                 }
+
+                //// Spawn the sidecar and get a receiver for its output.
+                //
+                // tauri::async_runtime::spawn(async move {
+                //     while let Some(event) = rx.recv().await {
+                //         // if let CommandEvent::Stdout(line_bytes) = event
+                //         match event {
+                //             CommandEvent::Stdout(line_bytes) => {
+                //                 let line = String::from_utf8_lossy(&line_bytes);
+                //                 println!("{}", line);?
+                //             }
+                //             CommandEvent::Stderr(line_bytes) => {
+                //                 let line = String::from_utf8_lossy(&line_bytes);
+                //                 eprintln!("{}", line);
+                //             }
+                //             _ => {}
+                //         }
+                //     }
+                // });
+            });
+
+            if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {
+                sender.send(ServerActions::StartSidecar).unwrap();
             }
-        });
-        
-        return Ok(());
-    })
-    .invoke_handler(tauri::generate_handler![get_server_address])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+
+            let window = _app.get_webview_window("main").unwrap();
+
+            window.on_window_event(move|event| {
+                if let WindowEvent::CloseRequested { .. } = event {
+                    if let Some(sender) = cleanup_sidecar_state.lock().unwrap().sender.as_ref() {
+                        sender.send(ServerActions::EndServer).unwrap();
+                    }
+                    // TODO:add thread clean up later
+                }
+            });
+
+
+            return Ok(());
+        })
+        .invoke_handler(tauri::generate_handler![get_server_address])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
