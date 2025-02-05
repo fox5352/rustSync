@@ -1,0 +1,3 @@
+[submodule "server"]
+	path = server
+	url = git@github.com:fox5352/sync-server-api.git
