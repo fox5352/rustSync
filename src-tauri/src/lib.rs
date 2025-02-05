@@ -1,4 +1,4 @@
-use tauri_plugin_shell::process::{Command, CommandChild};
+use tauri_plugin_shell::process::{Command, CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
 use tauri::{Manager, State, WindowEvent};
@@ -58,8 +58,9 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
     if let Some(session) = session {
         let addr = get_ipv4_addr();
 
+        // FIX:TODO: fix localhost to ip after testing
         if let Some(addr) = addr {
-            let url = format!("http://{}:9090?token={}", addr, session.token);
+            let url = format!("http://{}:9090?token={}", "localhost", session.token);
 
             return Some(url);
         }
@@ -144,7 +145,24 @@ pub fn run() {
                                     .expect("failed to spawn sidecar");
 
                                 sidecar_state.is_live = true;
-                                // sidecar_state.child = Some(_child);
+                                sidecar_state.child = Some(_child);
+
+                                tauri::async_runtime::spawn(async move {
+                                    while let Some(event) = rx.recv().await {
+                                        // if let CommandEvent::Stdout(line_bytes) = event
+                                        match event {
+                                            CommandEvent::Stdout(line_bytes) => {
+                                                let line = String::from_utf8_lossy(&line_bytes);
+                                                println!("{}", line);
+                                            }
+                                            CommandEvent::Stderr(line_bytes) => {
+                                                let line = String::from_utf8_lossy(&line_bytes);
+                                                eprintln!("{}", line);
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                });
                             }
                             ServerActions::StopSidecar => {
                                 // stop server
@@ -166,27 +184,11 @@ pub fn run() {
 
                     // Drop the lock before sleeping
                     drop(sidecar_state);
-                    thread::sleep(std::time::Duration::from_millis(1500));
+                    thread::sleep(std::time::Duration::from_millis(500));
                 }
 
                 //// Spawn the sidecar and get a receiver for its output.
                 //
-                // tauri::async_runtime::spawn(async move {
-                //     while let Some(event) = rx.recv().await {
-                //         // if let CommandEvent::Stdout(line_bytes) = event
-                //         match event {
-                //             CommandEvent::Stdout(line_bytes) => {
-                //                 let line = String::from_utf8_lossy(&line_bytes);
-                //                 println!("{}", line);?
-                //             }
-                //             CommandEvent::Stderr(line_bytes) => {
-                //                 let line = String::from_utf8_lossy(&line_bytes);
-                //                 eprintln!("{}", line);
-                //             }
-                //             _ => {}
-                //         }
-                //     }
-                // });
             });
 
             if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {

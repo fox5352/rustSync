@@ -1,15 +1,15 @@
 import { useState } from "react";
 
 import { Box, Typography, Button, Divider, IconButton } from "@mui/material";
-import { Delete, AddBox } from "@mui/icons-material"
+import { Delete, AddBox } from "@mui/icons-material";
 import { SettingsKeys } from "../../../lib/requests";
 
 type ViewBox = {
   label: string;
-  key: SettingsKeys;
+  key?: SettingsKeys;
   paths: string[];
-  updatedFunc: (key: SettingsKeys, list: string[]) => {}
-}
+  updatedFunc: (key: SettingsKeys, list: string[]) => {};
+};
 
 export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -22,9 +22,9 @@ export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
 
     // TODO: use update function
     console.log(pathsCopy);
-  }
+  };
 
-  const addNewPath = () => { }
+  const addNewPath = () => {};
 
   const selectLogic = (index: number) => {
     if (index == selected) {
@@ -32,7 +32,7 @@ export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
     } else {
       setSelected(index);
     }
-  }
+  };
 
   return (
     <Box
@@ -42,10 +42,15 @@ export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
         flexDirection: "column",
         height: "100%",
         p: 2,
-      }}>
+      }}
+    >
       {/*  */}
       <Box sx={{ display: "flex" }}>
-        <Typography variant="h5" component="h2" sx={{ textDecoration: "underline" }}>
+        <Typography
+          variant="h5"
+          component="h2"
+          sx={{ textDecoration: "underline" }}
+        >
           {label}
         </Typography>
         <Box sx={{ flex: 1 }} />
@@ -59,18 +64,22 @@ export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
         </Box>
       </Box>
       {/*  */}
-      <Box id="test" sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        flex: 1,
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        height: "100%"
-      }}>
-        {
-          paths.map((path, index) => (
-            <Button key={index} sx={{
+      <Box
+        id="test"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          flex: 1,
+          border: "1px solid #ccc",
+          borderRadius: 2,
+          height: "100%",
+        }}
+      >
+        {paths.map((path, index) => (
+          <Button
+            key={index}
+            sx={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -78,14 +87,15 @@ export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
               border: "1px solid #ccc",
               borderRadius: 1.3,
             }}
-              onClick={() => selectLogic(index)}
-              variant={selected === index ? "contained" : "outlined"}
-            >
-              <Box>{index + 1}. {path}</Box>
-            </Button>
-          ))
-        }
+            onClick={() => selectLogic(index)}
+            variant={selected === index ? "contained" : "outlined"}
+          >
+            <Box>
+              {index + 1}. {path}
+            </Box>
+          </Button>
+        ))}
       </Box>
     </Box>
-  )
+  );
 }
