@@ -16,6 +16,7 @@ import {
   SettingsKeys,
   updateSettings,
 } from "../../lib/requests";
+import InputBox from "./ui/InputBox";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -44,7 +45,10 @@ export default function SettingsPage() {
       try {
         setIsLoading(true);
         setIsError(null);
+
         const settings = await getSettings();
+
+        console.log(settings);
 
         setSettings(settings);
       } catch (e: any) {
@@ -102,11 +106,31 @@ export default function SettingsPage() {
             paths={settings?.audioPaths || []}
             updatedFunc={updateFunction}
           />
-          <Divider />
           <ViewBox
             label="Image Paths"
             keySettings="imagePaths"
             paths={settings?.imagePaths || []}
+            updatedFunc={updateFunction}
+          />
+          <Divider />
+          <InputBox
+            label="Image Types"
+            keySettings="imageExt"
+            paths={settings?.imageExt || []}
+            updatedFunc={updateFunction}
+          />
+          <InputBox
+            label="Audio Types"
+            keySettings="audioExt"
+            paths={settings?.audioExt || []}
+            updatedFunc={updateFunction}
+          />
+          <Divider />
+          <Divider />
+          <InputBox
+            label="Allow List"
+            keySettings="allowList"
+            paths={settings?.allowList || []}
             updatedFunc={updateFunction}
           />
         </Container>

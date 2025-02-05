@@ -24,12 +24,12 @@ export default function ViewBox({
   const removeSelected = () => {
     if (selected == null) return;
 
-    const pathsCopy = [...localPaths];
-
-    pathsCopy.splice(selected, 1);
-
-    // TODO: use update function
-    console.log(pathsCopy);
+    setLocalPaths((prev) => {
+      const buffer = prev.filter((_item, index) => index != selected);
+      setSelected(null);
+      updatedFunc(keySettings!, buffer);
+      return buffer;
+    });
   };
 
   const addNewPath = async () => {

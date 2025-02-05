@@ -191,9 +191,9 @@ pub fn run() {
                 //
             });
 
-            // if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {
-            //     sender.send(ServerActions::StartSidecar).unwrap();
-            // }
+            if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {
+                sender.send(ServerActions::StartSidecar).unwrap();
+            }
 
             let window = _app.get_webview_window("main").unwrap();
 

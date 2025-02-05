@@ -38,8 +38,7 @@ export type SettingsKeys =
   | "server";
 
 export async function getSessionData(): Promise<[string, string]> {
-  // const res: string | null = await invoke("get_server_address");
-  const res = "http://localhost:9090?token=testing";
+  const res: string | null = await invoke("get_server_address");
 
   if (!res) throw new Error("Failed to get res from backend");
 
@@ -86,8 +85,6 @@ async function request(
   };
 
   const res = await fetch(`${addr}/${url}`, options);
-
-  console.log(res);
 
   return res;
 }
