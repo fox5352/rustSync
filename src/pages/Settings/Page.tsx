@@ -44,12 +44,11 @@ export default function SettingsPage() {
       try {
         setIsLoading(true);
         setIsError(null);
-        // const settings = await getSettings();
-        const test = await getSettings();
-        console.log(test);
+        const settings = await getSettings();
 
-        // setSettings(settings);
+        setSettings(settings);
       } catch (e: any) {
+        console.error("Failed to fetch settings:", e);
         setIsError({
           message: e.message,
           colorCode: "error",
@@ -99,12 +98,14 @@ export default function SettingsPage() {
         >
           <ViewBox
             label="Audio Paths"
+            keySettings="audioPaths"
             paths={settings?.audioPaths || []}
             updatedFunc={updateFunction}
           />
           <Divider />
           <ViewBox
             label="Image Paths"
+            keySettings="imagePaths"
             paths={settings?.imagePaths || []}
             updatedFunc={updateFunction}
           />

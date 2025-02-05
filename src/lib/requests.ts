@@ -38,7 +38,8 @@ export type SettingsKeys =
   | "server";
 
 export async function getSessionData(): Promise<[string, string]> {
-  const res: string | null = await invoke("get_server_address");
+  // const res: string | null = await invoke("get_server_address");
+  const res = "http://localhost:9090?token=testing";
 
   if (!res) throw new Error("Failed to get res from backend");
 
@@ -50,30 +51,43 @@ export async function getSessionData(): Promise<[string, string]> {
   return [addr, token];
 }
 
+/**
+ * Perform a request to the backend.
+ *
+ * @param url The URL path of the request
+ * @param method The HTTP method of the request
+ * @param body The body of the request. Must be defined for POST requests.
+ *
+ * @returns A promise that resolves to the response object
+ *
+ * @throws If getSessionData() fails
+ * @throws If the request method is POST and no body is given
+ */
 async function request(
   url: string,
   method: "GET" | "POST" | "PUT",
-  body?: any
+  body?: string
 ) {
   const [addr, query] = await getSessionData();
-
   const token = query.split("=")[1];
-
   if (!addr || !token)
     throw new Error("failed to get session data from backend");
 
-  const headers = new Headers();
-  headers.append("Authorization", `Bearer ${token}`);
-  let options = {
-    method,
-    headers,
-    body,
-  };
-
-  if (method == "POST" && !body)
+  if (method == "POST" && (body == undefined || body == null))
     throw new Error("Can't do a post request without a body");
 
+  let options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: body,
+  };
+
   const res = await fetch(`${addr}/${url}`, options);
+
+  console.log(res);
 
   return res;
 }
@@ -93,13 +107,17 @@ export async function updateSettings(
   updateData: unknown,
   rvop: boolean = false
 ) {
-  const res = await request("api/settings", "PUT", { settings: updateData });
+  const res = await request(
+    "api/settings",
+    "POST",
+    JSON.stringify({ settings: updateData })
+  );
 
   if (!res.ok)
     throw new Error(`failed to request ${res.status}:${res.statusText}`);
 
   if (rvop) {
-    const newSettings = await getSettings();
+    const newSettings = await res.json();
 
     return newSettings;
   } else {

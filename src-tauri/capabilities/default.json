@@ -19,6 +19,10 @@
       ]
     },
     "shell:allow-open",
-    "fs:default"
+    "fs:default",
+    "dialog:default",
+    "dialog:default",
+    "dialog:default",
+    "dialog:default"
   ]
 }

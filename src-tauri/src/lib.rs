@@ -58,9 +58,8 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
     if let Some(session) = session {
         let addr = get_ipv4_addr();
 
-        // FIX:TODO: fix localhost to ip after testing
         if let Some(addr) = addr {
-            let url = format!("http://{}:9090?token={}", "localhost", session.token);
+            let url = format!("http://{}:9090?token={}", addr, session.token);
 
             return Some(url);
         }
@@ -107,6 +106,7 @@ pub fn run() {
     let _sidecar_thread: Option<JoinHandle<()>> = None;
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
@@ -191,9 +191,9 @@ pub fn run() {
                 //
             });
 
-            if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {
-                sender.send(ServerActions::StartSidecar).unwrap();
-            }
+            // if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {
+            //     sender.send(ServerActions::StartSidecar).unwrap();
+            // }
 
             let window = _app.get_webview_window("main").unwrap();
 

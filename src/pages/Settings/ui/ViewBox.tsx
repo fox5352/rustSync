@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 
 import { Box, Typography, Button, Divider, IconButton } from "@mui/material";
 import { Delete, AddBox } from "@mui/icons-material";
@@ -6,25 +7,46 @@ import { SettingsKeys } from "../../../lib/requests";
 
 type ViewBox = {
   label: string;
-  key?: SettingsKeys;
+  keySettings: SettingsKeys;
   paths: string[];
   updatedFunc: (key: SettingsKeys, list: string[]) => {};
 };
 
-export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
+export default function ViewBox({
+  label,
+  keySettings,
+  paths,
+  updatedFunc,
+}: ViewBox) {
+  const [localPaths, setLocalPaths] = useState<string[]>(paths);
   const [selected, setSelected] = useState<number | null>(null);
 
   const removeSelected = () => {
     if (selected == null) return;
 
-    const pathsCopy = [...paths];
+    const pathsCopy = [...localPaths];
+
     pathsCopy.splice(selected, 1);
 
     // TODO: use update function
     console.log(pathsCopy);
   };
 
-  const addNewPath = () => {};
+  const addNewPath = async () => {
+    const selected = await open({
+      multiple: true,
+      directory: true,
+    });
+
+    if (selected == null) return;
+
+    setLocalPaths((prev) => {
+      const buffer = [...prev, ...selected];
+
+      updatedFunc(keySettings!, buffer);
+      return buffer;
+    });
+  };
 
   const selectLogic = (index: number) => {
     if (index == selected) {
@@ -69,14 +91,14 @@ export default function ViewBox({ label, key, paths, updatedFunc }: ViewBox) {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: 2,
+          gap: 0.2,
           flex: 1,
           border: "1px solid #ccc",
           borderRadius: 2,
           height: "100%",
         }}
       >
-        {paths.map((path, index) => (
+        {localPaths.map((path, index) => (
           <Button
             key={index}
             sx={{
