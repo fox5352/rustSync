@@ -1,7 +1,0 @@
-{
-    "files":{
-    "excludeDirs":[
-      "**/node_modules/**"
-    ]
-  }
-}
