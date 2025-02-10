@@ -75,7 +75,9 @@ export default function Sync() {
           >
             {isServerLive ? (
               address ? (
-                <QRCodeCanvas value={`${address.addr}?${address.token}`} />
+                <QRCodeCanvas
+                  value={`${address.addr}?token=${address.token}`}
+                />
               ) : (
                 <></>
               )
@@ -95,10 +97,10 @@ export default function Sync() {
               address ? (
                 <>
                   <Typography variant="body1" component="p">
-                    {address.addr}
+                    Url:{address.addr}
                   </Typography>
                   <Typography variant="body2" component="p">
-                    {address.token}
+                    Token:{address.token}
                   </Typography>
                 </>
               ) : (

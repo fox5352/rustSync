@@ -42,7 +42,9 @@ export async function getSessionData(): Promise<[string, string]> {
 
   if (!res) throw new Error("Failed to get res from backend");
 
-  const [addr, token] = res.split("?");
+  const [addr, searchParams] = res.split("?");
+
+  const token = new URLSearchParams(searchParams).get("token");
 
   if (!addr) throw new Error("server address not found in storage");
   if (!token) throw new Error("token not found in storage");
@@ -67,8 +69,8 @@ async function request(
   method: "GET" | "POST" | "PUT",
   body?: string
 ) {
-  const [addr, query] = await getSessionData();
-  const token = query.split("=")[1];
+  const [addr, token] = await getSessionData();
+
   if (!addr || !token)
     throw new Error("failed to get session data from backend");
 
