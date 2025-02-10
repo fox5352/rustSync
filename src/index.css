@@ -8,5 +8,6 @@ a {
 }
 
 body {
+  color: inherit;
   overflow: hidden;
 }
