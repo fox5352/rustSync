@@ -121,3 +121,17 @@ export async function updateSettings(
     return null;
   }
 }
+
+export async function toggleServerState(): Promise<boolean | null> {
+  return await invoke<boolean>("toggle_server").catch((error) => {
+    console.error("failed on toggleServerState ", error);
+    return null;
+  });
+}
+
+export async function getServerStatus(): Promise<boolean | null> {
+  return await invoke<boolean>("get_server_status").catch((error) => {
+    console.error("failed on getServerStatus", error);
+    return null;
+  });
+}

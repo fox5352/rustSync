@@ -6,3 +6,7 @@ a {
   font-weight: inherit;
   background-color: inherit;
 }
+
+body {
+  overflow: hidden;
+}

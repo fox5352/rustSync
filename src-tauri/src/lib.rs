@@ -11,9 +11,23 @@ use std::thread::{self, JoinHandle};
 
 use uuid::Uuid;
 
-#[derive(Debug)]
 struct Session {
     token: String,
+    server_state: Arc<Mutex<SidecarState>>,
+}
+
+#[derive(Clone)]
+enum ServerActions {
+    StartSidecar,
+    StopSidecar,
+    EndServer,
+}
+
+#[derive(Default)]
+struct SidecarState {
+    is_live: bool,
+    child: Option<CommandChild>,
+    sender: Option<mpsc::Sender<ServerActions>>,
 }
 
 fn get_ipv4_addr() -> Option<String> {
@@ -49,6 +63,56 @@ fn get_ipv4_addr() -> Option<String> {
 }
 
 #[tauri::command]
+fn toggle_server(state: State<'_, Mutex<Session>>) -> Result<bool, String> {
+    let session = match state.lock() {
+        Ok(data) => data,
+        Err(error) => {
+            eprintln!("error in toggle_server while locking session {}", error);
+            return Err(error.to_string());
+        }
+    };
+
+    let mut server_state = match session.server_state.lock() {
+        Ok(data) => data,
+        Err(error) => {
+            eprintln!("error in toggle_server while locking server state {}", error);
+            return Err(error.to_string());
+        }
+    };
+
+    if server_state.is_live {
+        server_state.sender.as_ref().unwrap().send(ServerActions::StopSidecar).unwrap();
+        server_state.is_live = false;
+        return Ok(false);
+    }else {
+        server_state.sender.as_ref().unwrap().send(ServerActions::StartSidecar).unwrap();
+        server_state.is_live = true;
+        return Ok(true);
+    }
+}
+
+#[tauri::command]
+fn get_server_status(state: State<'_, Mutex<Session>>) -> Result<bool, String> {
+    let session = match state.lock() {
+        Ok(data) => data,
+        Err(error) => {
+            eprintln!("error in get_server_status while locking session {}", error);
+            return Err(error.to_string());
+        }
+    };
+
+    let server_state = match session.server_state.lock() {
+        Ok(data) => data,
+        Err(error) => {
+            eprintln!("error in get_server_status while locking server state {}", error);
+            return Err(error.to_string());
+        }
+    };
+
+    return Ok(server_state.is_live);
+}
+
+#[tauri::command]
 fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
     let session = match state.lock() {
         Ok(data) => Some(data),
@@ -68,28 +132,8 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
     return None;
 }
 
-#[derive(Clone)]
-enum ServerActions {
-    StartSidecar,
-    StopSidecar,
-    EndServer,
-}
-
-#[derive(Default)]
-struct SidecarState {
-    is_live: bool,
-    child: Option<CommandChild>,
-    sender: Option<mpsc::Sender<ServerActions>>,
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // ----------------------- session state initialize  -----------------------
-    let _uuid = Uuid::new_v4();
-    let session_state: Mutex<Session> = Mutex::new(Session {
-        token: _uuid.to_string().clone(),
-    });
-
     // ----------------------- sidecar state initialize  -----------------------
     let (rx, tx) = mpsc::channel::<ServerActions>();
 
@@ -98,9 +142,17 @@ pub fn run() {
         child: None,
         sender: Some(rx),
     }));
+    let session_sidecar_state = Arc::clone(&main_sidecar_state);
     let starter_sidecar_state = Arc::clone(&main_sidecar_state);
     let cleanup_sidecar_state = Arc::clone(&main_sidecar_state);
     let sidecar_state = Arc::clone(&main_sidecar_state);
+
+    // ----------------------- session state initialize  -----------------------
+    let _uuid = Uuid::new_v4();
+    let session_state: Mutex<Session> = Mutex::new(Session {
+        token: _uuid.to_string().clone(),
+        server_state: session_sidecar_state,
+    });
 
     // ----------------------- thread state initialize  -----------------------
     let _sidecar_thread: Option<JoinHandle<()>> = None;
@@ -208,7 +260,7 @@ pub fn run() {
 
             return Ok(());
         })
-        .invoke_handler(tauri::generate_handler![get_server_address])
+        .invoke_handler(tauri::generate_handler![get_server_address, toggle_server, get_server_status])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

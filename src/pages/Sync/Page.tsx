@@ -6,17 +6,33 @@ import { Home } from "@mui/icons-material";
 import { QRCodeCanvas } from "qrcode.react";
 
 import { Link } from "react-router";
-import { getStorageItem } from "../../lib/storageManager";
+import { getServerStatus, getSessionData } from "../../lib/requests";
 
 export default function Sync() {
-  const [address, setAddress] = useState<string | null>(null);
+  const [isServerLive, setIsServerLive] = useState(true);
+  const [address, setAddress] = useState<{
+    addr: string;
+    token: string;
+  } | null>(null);
 
   useEffect(() => {
-    const addr = getStorageItem("serverAddress");
+    (async () => {
+      const [addr, token] = await getSessionData();
 
-    if (addr) {
-      setAddress(addr);
-    }
+      if (addr) {
+        setAddress({ addr, token });
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const fetchServerStatus = async () => {
+      const serverState = await getServerStatus();
+
+      setIsServerLive(serverState ? serverState : false);
+    };
+
+    fetchServerStatus();
   }, []);
 
   return (
@@ -27,7 +43,7 @@ export default function Sync() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          height: "100%",
+          height: "100",
           p: 2,
           my: 10,
           textAlign: "center",
@@ -57,7 +73,15 @@ export default function Sync() {
             border={!address ? "1px solid black" : "none"}
             borderRadius={!address ? "4px" : "none"}
           >
-            {address ? <QRCodeCanvas value={address} /> : <></>}
+            {isServerLive ? (
+              address ? (
+                <QRCodeCanvas value={`${address.addr}?${address.token}`} />
+              ) : (
+                <></>
+              )
+            ) : (
+              <></>
+            )}
           </Box>
           {/* raw ip address */}
           <Box
@@ -67,9 +91,22 @@ export default function Sync() {
             }}
             bgcolor="secondary"
           >
-            <Typography variant="body1" component={"p"}>
-              {address ? address : "Ip not found"}
-            </Typography>
+            {isServerLive ? (
+              address ? (
+                <>
+                  <Typography variant="body1" component="p">
+                    {address.addr}
+                  </Typography>
+                  <Typography variant="body2" component="p">
+                    {address.token}
+                  </Typography>
+                </>
+              ) : (
+                "Ip not found"
+              )
+            ) : (
+              "Server is offline"
+            )}
           </Box>
 
           <Link to="/">

@@ -7,7 +7,11 @@ export default function Rootlayout() {
   return (
     <>
       <Navbar />
-      <Container maxWidth="lg" component="main">
+      <Container
+        maxWidth="lg"
+        component="main"
+        sx={{ height: "100vh", overflowY: "scroll", pb: 12 }}
+      >
         <Outlet />
       </Container>
     </>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 
-import { Box, Typography, Button, Divider, IconButton } from "@mui/material";
+import { Box, Typography, Button, IconButton } from "@mui/material";
 import { Delete, AddBox } from "@mui/icons-material";
 import { SettingsKeys } from "../../../lib/requests";
 
