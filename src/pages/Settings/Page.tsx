@@ -89,7 +89,6 @@ export default function SettingsPage() {
   return (
     <>
       <Container
-        id="testing"
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -97,7 +96,6 @@ export default function SettingsPage() {
           width: "100%",
           flexGrow: 1,
           p: 2,
-          pt: 10,
           my: 4,
           //   backgroundColor: "#f7f7f7", // Optional background color
           borderRadius: "8px", // Optional: adds rounded corners
