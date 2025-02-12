@@ -146,6 +146,13 @@ export default function SettingsPage() {
                 updatedFunc={updateFunction}
               />
               <Divider />
+              <ViewBox
+                label="Video Paths"
+                keySettings="videoPaths"
+                paths={settings?.videoPaths || []}
+                updatedFunc={updateFunction}
+              />
+              <Divider />
               <InputBox
                 label="Image Types"
                 keySettings="imageExt"
@@ -159,6 +166,12 @@ export default function SettingsPage() {
                 updatedFunc={updateFunction}
               />
               <Divider />
+              <InputBox
+                label="Video Types"
+                keySettings="videoExt"
+                paths={settings?.videoExt || []}
+                updatedFunc={updateFunction}
+              />
               <Divider />
               <InputBox
                 label="Allow List"
