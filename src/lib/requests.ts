@@ -124,6 +124,91 @@ export async function updateSettings(
   }
 }
 
+[
+  {
+    key: "C:\\Users\\fox5352\\Music",
+    "C:\\Users\\fox5352\\Music": [],
+  },
+  {
+    key: "C:\\Users\\fox5352\\Music\\New folder",
+    "C:\\Users\\fox5352\\Music\\New folder": [
+      {
+        name: "tseting - Copy (2)",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (2).mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting - Copy (3)",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (3).mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting - Copy (4)",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (4).mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting - Copy (5)",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (5).mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting - Copy (6)",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (6).mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting - Copy (7)",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (7).mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting - Copy",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy.mp3",
+        extension: ".mp3",
+      },
+      {
+        name: "tseting",
+        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting.mp3",
+        extension: ".mp3",
+      },
+    ],
+  },
+];
+
+export interface File {
+  name: string;
+  path: string;
+  extension: string;
+}
+
+export interface Folder {
+  [key: string]: File[];
+}
+
+export interface FileData {
+  key: string;
+  folder: Folder;
+}
+
+export async function getFiles<T>(
+  type: string
+): Promise<[{ data: T; message: string } | null, string | null]> {
+  const res = await request(`api/${type}`, "GET");
+
+  if (!res.ok) {
+    return [
+      null,
+      `failed to request files type:${type}::${res.status}:${res.statusText}`,
+    ];
+  }
+
+  const data = await res.json();
+
+  return [data as { data: T; message: string }, null];
+}
+
+// ---------------------------------------- tauri invoke calls ----------------------------------------
 export async function toggleServerState(): Promise<boolean | null> {
   return await invoke<boolean>("toggle_server").catch((error) => {
     console.error("failed on toggleServerState ", error);
