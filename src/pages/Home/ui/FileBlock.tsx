@@ -1,4 +1,4 @@
-import { MusicNote, Videocam } from "@mui/icons-material";
+import { Image, MusicNote, Videocam } from "@mui/icons-material";
 import { Box, Tooltip, Typography } from "@mui/material";
 import { useMemo } from "react";
 
@@ -19,6 +19,9 @@ export default function FileBlock({
     switch (type) {
       case "audio": {
         return () => <MusicNote />;
+      }
+      case "image": {
+        return () => <Image />;
       }
       // TODO: add video and image
       default:
