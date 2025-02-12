@@ -9,12 +9,22 @@ export type ImagePaths = {
 export type AudioPaths = {
   audioPaths: string[];
 };
+
+export type VideoPaths = {
+  videoPaths: string[];
+};
+
 export type ImageExt = {
   imageExt: string[];
 };
 export type AudioExt = {
   audioExt: string[];
 };
+
+export type VideoExt = {
+  videoExt: string[];
+};
+
 export type Server = {
   server: {
     host: string;
@@ -25,16 +35,20 @@ export type Server = {
 export type Settings = AllowLst &
   ImagePaths &
   AudioPaths &
+  VideoPaths &
   ImageExt &
   AudioExt &
+  VideoExt &
   Server;
 
 export type SettingsKeys =
   | "allowList"
   | "imagePaths"
   | "audioPaths"
+  | "videoPaths"
   | "imageExt"
   | "audioExt"
+  | "videoExt"
   | "server";
 
 export async function getSessionData(): Promise<[string, string]> {
@@ -123,58 +137,6 @@ export async function updateSettings(
     return null;
   }
 }
-
-[
-  {
-    key: "C:\\Users\\fox5352\\Music",
-    "C:\\Users\\fox5352\\Music": [],
-  },
-  {
-    key: "C:\\Users\\fox5352\\Music\\New folder",
-    "C:\\Users\\fox5352\\Music\\New folder": [
-      {
-        name: "tseting - Copy (2)",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (2).mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting - Copy (3)",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (3).mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting - Copy (4)",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (4).mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting - Copy (5)",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (5).mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting - Copy (6)",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (6).mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting - Copy (7)",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy (7).mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting - Copy",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting - Copy.mp3",
-        extension: ".mp3",
-      },
-      {
-        name: "tseting",
-        path: "C:\\Users\\fox5352\\Music\\New folder\\tseting.mp3",
-        extension: ".mp3",
-      },
-    ],
-  },
-];
 
 export interface File {
   name: string;
