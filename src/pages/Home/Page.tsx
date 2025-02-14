@@ -26,8 +26,6 @@ export default function Home() {
   const manageStateFromData = async (allowList: string[]) => {
     for (const fileType of allowList) {
       const [res, error] = await getFiles<FileData[]>(fileType);
-      console.log(fileType, res);
-
       const capitalizeFirstLetter = (str: string) =>
         str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -46,8 +44,6 @@ export default function Home() {
       }
 
       const { data: fileDataArray } = res;
-
-      console.log(block.toLowerCase(), fileDataArray);
 
       setPageState((prev: any) => ({
         ...prev,
@@ -124,22 +120,3 @@ export default function Home() {
     </>
   );
 }
-
-const Loading = () => {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        p: 2,
-        my: 10,
-        textAlign: "center",
-      }}
-    >
-      <CircularProgress size={78} />
-    </Box>
-  );
-};
