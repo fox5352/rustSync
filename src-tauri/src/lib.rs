@@ -19,8 +19,7 @@ struct Session {
 #[derive(Clone)]
 enum ServerActions {
     StartSidecar,
-    StopSidecar,
-    EndServer,
+    StopSidecar
 }
 
 #[derive(Default)]
@@ -167,7 +166,7 @@ pub fn run() {
             let app = _app.handle().clone();
 
             thread::spawn(move || {
-                'sidecar_check_loop: loop {
+                loop {
                     // Create the sidecar command.
                     let sidecar_command: Command = app
                         .shell()
@@ -222,13 +221,6 @@ pub fn run() {
                                     child.kill().expect("failed to kill sidecar");
                                 }
                                 sidecar_state.is_live = false;
-                            }
-                            ServerActions::EndServer => {
-                                if let Some(child) = sidecar_state.child.take() {
-                                    child.kill().expect("failed to kill sidecar");
-                                }
-                                sidecar_state.is_live = false;
-                                break 'sidecar_check_loop;
                             }
                         },
                         _ => (),

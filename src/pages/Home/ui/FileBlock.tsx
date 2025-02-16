@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Command } from "@tauri-apps/plugin-shell";
 
 import { Image, MusicNote, Videocam } from "@mui/icons-material";
 import { Box, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
@@ -33,12 +32,7 @@ export type FileBlockProps = {
   };
 };
 
-export default function FileBlock({
-  name,
-  type,
-  path,
-  metadata,
-}: FileBlockProps) {
+export default function FileBlock({ name, type, metadata }: FileBlockProps) {
   const [image, setImage] = useState<string | null>(null);
   const [additionalData, setAdditionalData] = useState({
     duration: "",

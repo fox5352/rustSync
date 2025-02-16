@@ -7,7 +7,7 @@ import {
   getSettings,
   Settings,
 } from "../../lib/requests";
-import { Box, CircularProgress, Container, Divider } from "@mui/material";
+import { Container, Divider } from "@mui/material";
 import FileView from "./ui/FileView";
 
 export default function Home() {
