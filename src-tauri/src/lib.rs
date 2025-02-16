@@ -251,17 +251,13 @@ pub fn run() {
 
             window.on_window_event(move |event| {
                 if let WindowEvent::CloseRequested { .. } = event {
-                    println!("window closed");
-                    println!("window closed");
-                    println!("window closed");
-                    println!("window closed");
 
-                    if let Some(sender) = cleanup_sidecar_state.lock().unwrap().sender.as_ref() {
-                        sender.send(ServerActions::EndServer).unwrap();
+                    if let Some(child) = cleanup_sidecar_state.lock().unwrap().child.take() {
+                        child.kill().expect("failed to kill sidecar");
                     }
-                    // TODO:add thread clean up later
                 }
             });
+
 
             return Ok(());
         })
