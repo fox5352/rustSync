@@ -251,6 +251,11 @@ pub fn run() {
 
             window.on_window_event(move |event| {
                 if let WindowEvent::CloseRequested { .. } = event {
+                    println!("window closed");
+                    println!("window closed");
+                    println!("window closed");
+                    println!("window closed");
+
                     if let Some(sender) = cleanup_sidecar_state.lock().unwrap().sender.as_ref() {
                         sender.send(ServerActions::EndServer).unwrap();
                     }
