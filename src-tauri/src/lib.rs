@@ -19,7 +19,7 @@ struct Session {
 #[derive(Clone)]
 enum ServerActions {
     StartSidecar,
-    StopSidecar
+    StopSidecar,
 }
 
 #[derive(Default)]
@@ -74,17 +74,30 @@ fn toggle_server(state: State<'_, Mutex<Session>>) -> Result<bool, String> {
     let mut server_state = match session.server_state.lock() {
         Ok(data) => data,
         Err(error) => {
-            eprintln!("error in toggle_server while locking server state {}", error);
+            eprintln!(
+                "error in toggle_server while locking server state {}",
+                error
+            );
             return Err(error.to_string());
         }
     };
 
     if server_state.is_live {
-        server_state.sender.as_ref().unwrap().send(ServerActions::StopSidecar).unwrap();
+        server_state
+            .sender
+            .as_ref()
+            .unwrap()
+            .send(ServerActions::StopSidecar)
+            .unwrap();
         server_state.is_live = false;
         return Ok(false);
-    }else {
-        server_state.sender.as_ref().unwrap().send(ServerActions::StartSidecar).unwrap();
+    } else {
+        server_state
+            .sender
+            .as_ref()
+            .unwrap()
+            .send(ServerActions::StartSidecar)
+            .unwrap();
         server_state.is_live = true;
         return Ok(true);
     }
@@ -103,7 +116,10 @@ fn get_server_status(state: State<'_, Mutex<Session>>) -> Result<bool, String> {
     let server_state = match session.server_state.lock() {
         Ok(data) => data,
         Err(error) => {
-            eprintln!("error in get_server_status while locking server state {}", error);
+            eprintln!(
+                "error in get_server_status while locking server state {}",
+                error
+            );
             return Err(error.to_string());
         }
     };
@@ -148,12 +164,13 @@ pub fn run() {
 
     // ----------------------- session state initialize  -----------------------
     let _uuid = Uuid::new_v4();
+
     let session_state: Mutex<Session> = Mutex::new(Session {
         token: _uuid.to_string().clone(),
         server_state: session_sidecar_state,
     });
 
-    // ----------------------- thread state initialize  -----------------------
+    //----------------------- thread state initialize  -----------------------
     let _sidecar_thread: Option<JoinHandle<()>> = None;
 
     tauri::Builder::default()
@@ -184,6 +201,8 @@ pub fn run() {
                         Ok(msg) => match msg {
                             ServerActions::StartSidecar => {
                                 // start server
+                                println!("{}", _uuid.to_string().clone());
+
                                 let (mut rx, _child) = sidecar_command
                                     .env("TOKEN", _uuid.to_string())
                                     .spawn()
@@ -243,17 +262,19 @@ pub fn run() {
 
             window.on_window_event(move |event| {
                 if let WindowEvent::CloseRequested { .. } = event {
-
                     if let Some(child) = cleanup_sidecar_state.lock().unwrap().child.take() {
                         child.kill().expect("failed to kill sidecar");
                     }
                 }
             });
 
-
             return Ok(());
         })
-        .invoke_handler(tauri::generate_handler![get_server_address, toggle_server, get_server_status])
+        .invoke_handler(tauri::generate_handler![
+            get_server_address,
+            toggle_server,
+            get_server_status
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -6,9 +6,11 @@ import { Home } from "@mui/icons-material";
 import { QRCodeCanvas } from "qrcode.react";
 
 import { Link } from "react-router";
-import { getServerStatus, getSessionData } from "../../lib/requests";
+import { getServerStatus } from "../../lib/requests";
+import { useSession } from "../../store/session";
 
 export default function Sync() {
+  const { session, overide } = useSession();
   const [isServerLive, setIsServerLive] = useState(true);
   const [address, setAddress] = useState<{
     addr: string;
@@ -16,24 +18,26 @@ export default function Sync() {
   } | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const [addr, token] = await getSessionData();
+    if (!session) return;
 
-      if (addr) {
-        setAddress({ addr, token });
-      }
-    })();
-  }, []);
+    setAddress({ addr: session.url, token: session.token });
+
+  }, [session]);
 
   useEffect(() => {
     const fetchServerStatus = async () => {
       const serverState = await getServerStatus();
 
+      if (overide && session != null) {
+        setIsServerLive(true);
+        return;
+      }
+
       setIsServerLive(serverState ? serverState : false);
     };
 
     fetchServerStatus();
-  }, []);
+  }, [overide]);
 
   return (
     <Container maxWidth="sm">

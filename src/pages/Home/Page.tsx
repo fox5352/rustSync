@@ -3,14 +3,15 @@ import { useEffect, useState } from "react";
 import {
   FileData,
   getFiles,
-  getSessionData,
   getSettings,
   Settings,
 } from "../../lib/requests";
 import { Container, Divider } from "@mui/material";
 import FileView from "./ui/FileView";
+import { useSession } from "../../store/session";
 
 export default function Home() {
+  const { session } = useSession();
   const [pageState, setPageState] = useState<any>({
     isImagesLoading: false,
     isImagesError: null,
@@ -24,8 +25,10 @@ export default function Home() {
   });
 
   const manageStateFromData = async (allowList: string[]) => {
+    if (session == null) return;
+
     for (const fileType of allowList) {
-      const [res, error] = await getFiles<FileData[]>(fileType);
+      const [res, error] = await getFiles<FileData[]>(fileType, session);
       const capitalizeFirstLetter = (str: string) =>
         str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -65,12 +68,9 @@ export default function Home() {
         isVideosLoading: true,
         isVideosError: null,
       }));
+      if (session == null) return;
 
-      const [url, token] = await getSessionData();
-
-      if (!url || !token) return;
-
-      let { allowList }: Settings = await getSettings();
+      let { allowList }: Settings = await getSettings(session);
 
       if (!allowList) {
         // TODO: add a way to give hole page error
@@ -79,7 +79,7 @@ export default function Home() {
 
       await manageStateFromData(allowList);
     })();
-  }, []);
+  }, [session]);
 
   return (
     <>

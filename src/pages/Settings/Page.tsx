@@ -6,6 +6,7 @@ import {
   CircularProgress,
   Container,
   Divider,
+  TextField,
   Typography,
 } from "@mui/material";
 
@@ -21,8 +22,10 @@ import {
   updateSettings,
 } from "../../lib/requests";
 import InputBox from "./ui/InputBox";
+import { useSession } from "../../store/session";
 
 export default function SettingsPage() {
+  const { session, overide, toggleOveride, setSession } = useSession();
   const [isServerLive, setIsServerLive] = useState<boolean>(false);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [isError, setIsError] = useState<StateError | null>(null);
@@ -33,8 +36,10 @@ export default function SettingsPage() {
       [key]: list,
     };
 
+    if (session == null) return;
+
     try {
-      const settings = await updateSettings(data, true);
+      const settings = await updateSettings(data, session, true);
       setSettings(settings);
     } catch (e) {
       console.error("Failed to update settings:", e);
@@ -53,19 +58,35 @@ export default function SettingsPage() {
     setIsServerLive(res);
   };
 
+  const submitSessionData = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.target as HTMLFormElement);
+    console.log(formData);
+
+    const url = formData.get('url')?.toString();
+    const token = formData.get('token')?.toString();
+
+    if (!url || !token) return;
+
+    setSession({ url, token });
+  }
+
   useEffect(() => {
+    ///-----------------------------------------------
     const fetchSettings = async () => {
-      if (!isServerLive) return;
-      console.log(`server state ${isServerLive}`);
+      if (overide == false && !isServerLive) return;
+
+      if (session == null) return;
 
       try {
         setIsLoading(true);
         setIsError(null);
 
-        const settings = await getSettings();
+        const settings = await getSettings(session);
 
         setSettings(settings);
       } catch (e: any) {
+
         console.error("Failed to fetch settings:", e);
         setIsError({
           message: e.message,
@@ -113,6 +134,64 @@ export default function SettingsPage() {
           </Button>
         </Box>
         <Divider />
+
+        <Box component="form" onSubmit={submitSessionData}>
+          <Box sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            py: 2,
+            my: 2,
+            borderRadius: 1.5
+          }} component="fieldset">
+            <Typography sx={{ display: "flex", justifyContent: "center", width: "fit-content", px: 1 }} variant="h5" component="legend">
+              Server Configuration
+            </Typography>
+            <TextField
+              id="url"
+              name="url"
+              label="URL"
+              type="url"
+              placeholder="Enter API URL"
+              size="small"
+              fullWidth
+            />
+            <TextField
+              id="token"
+              name="token"
+              label="Token"
+              type="text"
+              placeholder="Enter API token"
+              size="small"
+              fullWidth
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                sx={{
+                  width: "160px"
+                }}
+                type="submit"
+                variant="contained"
+                size="small"
+              >
+                Submit
+              </Button>
+              <Button
+                sx={{
+                  width: "160px"
+                }}
+                variant="contained"
+                color={overide ? "warning" : "primary"}
+                size="small"
+                onClick={(e) => { e.preventDefault(); toggleOveride() }}
+              >
+                {overide ? "desable overide" : "enable overide"}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider />
         {isError ? (
           <Alert severity="error">{isError.message}</Alert>
         ) : isLoading ? (
@@ -131,7 +210,7 @@ export default function SettingsPage() {
             <CircularProgress size={78} />
           </Box>
         ) : (
-          isServerLive && (
+          isServerLive || overide && (
             <>
               <ViewBox
                 label="Audio Paths"

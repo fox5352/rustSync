@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { Session } from "../store/session";
 
 export type AllowLst = {
   allowList: string[];
@@ -81,32 +82,39 @@ export async function getSessionData(): Promise<[string, string]> {
 async function request(
   url: string,
   method: "GET" | "POST" | "PUT",
+  session: Session,
   body?: string
 ) {
-  const [addr, token] = await getSessionData();
-
-  if (!addr || !token)
-    throw new Error("failed to get session data from backend");
-
   if (method == "POST" && (body == undefined || body == null))
     throw new Error("Can't do a post request without a body");
 
+  const headers = new Headers();
+  headers.append("Authorization", session.token);
+  headers.append("Content-Type", "application/json");
+
   let options = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     body: body,
   };
 
-  const res = await fetch(`${addr}/${url}`, options);
+  const res = await fetch(`${session.url}/${url}`, options);
 
   return res;
 }
 
-export async function getSettings(): Promise<Settings> {
-  const res = await request("api/settings", "GET");
+export async function getSettings(session: Session): Promise<Settings> {
+  const myHeaders = new Headers();
+  myHeaders.append("Authorization", `Bearer ${session.token}`);
+  myHeaders.append("Accept", "*/*");
+  myHeaders.append("Content-Type", "application/json");
+
+  const requestOptions = {
+    method: "GET",
+    headers: myHeaders,
+  };
+
+  const res = await fetch(`${session.url}/api/settings`, requestOptions);
 
   if (!res.ok)
     throw new Error(`failed to request ${res.status}:${res.statusText}`);
@@ -118,13 +126,20 @@ export async function getSettings(): Promise<Settings> {
 
 export async function updateSettings(
   updateData: unknown,
+  session: Session,
   rvop: boolean = false
 ) {
-  const res = await request(
-    "api/settings",
-    "POST",
-    JSON.stringify({ settings: updateData })
-  );
+  const myHeaders = new Headers();
+  myHeaders.append("Authorization", `Bearer ${session.token}`);
+  myHeaders.append("Content-Type", "application/json");
+
+  const requestOptions = {
+    method: "GET",
+    headers: myHeaders,
+    body: JSON.stringify(updateData),
+  };
+
+  const res = await fetch(`${session.url}/api/settings`, requestOptions);
 
   if (!res.ok)
     throw new Error(`failed to request ${res.status}:${res.statusText}`);
@@ -154,9 +169,10 @@ export interface FileData {
 }
 
 export async function getFiles<T>(
-  type: string
+  type: string,
+  session: Session
 ): Promise<[{ data: T; message: string } | null, string | null]> {
-  const res = await request(`api/${type}`, "GET");
+  const res = await request(`api/${type}`, "GET", session);
 
   if (!res.ok) {
     return [
