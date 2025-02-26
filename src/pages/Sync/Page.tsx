@@ -6,11 +6,11 @@ import { Home } from "@mui/icons-material";
 import { QRCodeCanvas } from "qrcode.react";
 
 import { Link } from "react-router";
-import { getServerStatus } from "../../lib/requests";
+import { getServerStatus, getSessionData } from "../../lib/requests";
 import { useSession } from "../../store/session";
 
 export default function Sync() {
-  const { session, overide } = useSession();
+  const { session, overide, setSession } = useSession();
   const [isServerLive, setIsServerLive] = useState(true);
   const [address, setAddress] = useState<{
     addr: string;
@@ -21,7 +21,6 @@ export default function Sync() {
     if (!session) return;
 
     setAddress({ addr: session.url, token: session.token });
-
   }, [session]);
 
   useEffect(() => {
@@ -38,6 +37,14 @@ export default function Sync() {
 
     fetchServerStatus();
   }, [overide]);
+
+  const resetSession = async () => {
+    const [url, token] = await getSessionData();
+
+    if (!url || !token) setSession(null);
+
+    setSession({ url, token });
+  };
 
   return (
     <Container maxWidth="sm">
@@ -104,7 +111,7 @@ export default function Sync() {
                     Url:{address.addr}
                   </Typography>
                   <Typography variant="body2" component="p">
-                    Token:{address.token}
+                    Token:{address.token}``
                   </Typography>
                 </>
               ) : (
@@ -120,6 +127,9 @@ export default function Sync() {
               Home
             </Button>
           </Link>
+          <Button variant="contained" onClick={resetSession}>
+            Reset Session
+          </Button>
         </Box>
 
         {/* Form */}

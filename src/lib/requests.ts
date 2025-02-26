@@ -128,15 +128,15 @@ export async function updateSettings(
   updateData: unknown,
   session: Session,
   rvop: boolean = false
-) {
+): Promise<Settings | null> {
   const myHeaders = new Headers();
   myHeaders.append("Authorization", `Bearer ${session.token}`);
   myHeaders.append("Content-Type", "application/json");
 
   const requestOptions = {
-    method: "GET",
+    method: "POST",
     headers: myHeaders,
-    body: JSON.stringify(updateData),
+    body: JSON.stringify({ settings: updateData }),
   };
 
   const res = await fetch(`${session.url}/api/settings`, requestOptions);
@@ -147,7 +147,7 @@ export async function updateSettings(
   if (rvop) {
     const newSettings = await res.json();
 
-    return newSettings;
+    return newSettings.data.settings;
   } else {
     return null;
   }
