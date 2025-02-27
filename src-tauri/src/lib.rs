@@ -268,6 +268,11 @@ pub fn run() {
                 }
             });
 
+            #[cfg(debug_assertions)]
+            {
+                window.open_devtools();
+            }
+
             return Ok(());
         })
         .invoke_handler(tauri::generate_handler![
