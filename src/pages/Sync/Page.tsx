@@ -111,7 +111,7 @@ export default function Sync() {
                     Url:{address.addr}
                   </Typography>
                   <Typography variant="body2" component="p">
-                    Token:{address.token}``
+                    Token:{address.token}
                   </Typography>
                 </>
               ) : (

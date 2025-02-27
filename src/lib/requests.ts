@@ -64,7 +64,7 @@ export async function getSessionData(): Promise<[string, string]> {
   if (!addr) throw new Error("server address not found in storage");
   if (!token) throw new Error("token not found in storage");
 
-  return [addr, token];
+  return [addr, token.trim()];
 }
 
 /**
