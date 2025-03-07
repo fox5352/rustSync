@@ -54,9 +54,13 @@ After installation, follow these steps to get RustSync up and running:
 
 ![](/assets/allow%20list%20direction.png)
 
-### 6️⃣ Final Step: **Sync** RustSyncDroid with your local server 🔄
+### 6️⃣ Sync\*\* RustSyncDroid with your local server 🔄
 
 ![](/assets/sync%20page%20direction.png)
+
+### Final Step: restart the server by toggling it off and then on
+
+![](/assets/toggle%20direction.png)
 
 ---
 
