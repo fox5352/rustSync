@@ -20,7 +20,7 @@ RustSync is a **desktop application** that lets you seamlessly **download files 
 
 2. Follow installation steps based on your platform:
 
-   - 🖥 **Windows**: Download the `.exe` or `.msi` installer and follow the setup.
+   - 🖥 **Windows**: Download the `.exe` or `.msi` installer and follow the setup. and on first start up allow app access to the firewall
    <!-- - 🍏 **macOS**: Download the `.dmg` file and drag the app to your Applications folder.
    - 🐧 **Linux**: Download the appropriate package for your distribution and install it. -->
 
