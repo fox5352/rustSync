@@ -10,7 +10,10 @@ RustSync is a **desktop application** that lets you seamlessly **download files 
 
 * Transfer files from **PC to Android** over a local network  
 * **Seamless integration** with [RustSyncDroid](https://github.com/fox5352/rustSyncDroid)  
-* **Easy setup & lightweight**
+* **Easy setup & lightweight**  
+
+### Microsoft is a scam
+Microsoft requires paid code-signing certificates, or else they will **flag software as a security threat**, forcing indie developers to pay just to distribute safe applications. unfortunately i wont be paying to have my free app certified
 
 ---
 
@@ -20,13 +23,9 @@ RustSync is a **desktop application** that lets you seamlessly **download files 
 
 2. Follow installation steps based on your platform:
 
-<<<<<<< HEAD
    - 🖥 **Windows**: Download the `.exe` or `.msi` installer and follow the setup. and on first start up allow app access to the firewall
    <!-- - 🍏 **macOS**: Download the `.dmg` file and drag the app to your Applications folder.
    - 🐧 **Linux**: Download the appropriate package for your distribution and install it. -->
-=======
-   - **Windows**: Download the `.exe` or `.msi` installer and follow the setup.
->>>>>>> b8edbb4cc73e00f0d4ac03c9a266e68acfdc9e65
 
 3. Install [RustSyncDroid](https://github.com/fox5352/rustSyncDroid) on your Android device for full functionality.
 
@@ -89,3 +88,4 @@ This project is licensed under the **Apache License**.
 ---
 
 **Ready to sync?** Download RustSync today!
+
