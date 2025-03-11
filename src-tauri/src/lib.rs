@@ -1,3 +1,7 @@
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::TrayIconBuilder
+};
 use tauri_plugin_shell::process::{Command, CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
@@ -182,6 +186,37 @@ pub fn run() {
         .setup(move |_app| {
             let app = _app.handle().clone();
 
+            // tray icon menu
+            let show_i = MenuItem::with_id(_app, "show", "Show", true, None::<&str>)?;
+
+            let hide_i = MenuItem::with_id(_app, "hide", "Hide", true, None::<&str>)?;
+
+            let quit_i = MenuItem::with_id(_app, "quit", "Quit", true, None::<&str>)?;
+
+            
+            let tray_menu = Menu::with_items(_app, &[&show_i,&hide_i,&quit_i])?;
+
+            let _ = TrayIconBuilder::new()
+                .menu(&tray_menu)
+                .icon(app.default_window_icon().unwrap().clone())
+                .on_menu_event(|_app, event| match event.id.as_ref() {
+                    "quit" => {
+                        _app.exit(0);
+                    },
+                    "show" => {
+                        _app.get_webview_window("main").unwrap().show().unwrap();
+                    },
+                    "hide" => {
+                        _app.get_webview_window("main").unwrap().hide().unwrap();
+                    },
+                    _=> {
+                        eprintln!("event not recognized");
+                    }
+                })
+                .show_menu_on_left_click(false)
+                .build(_app)?;
+        
+            // server sidecar spawner
             thread::spawn(move || {
                 loop {
                     // Create the sidecar command.
@@ -254,12 +289,13 @@ pub fn run() {
                 //
             });
 
+            // start server
             if let Some(sender) = starter_sidecar_state.lock().unwrap().sender.as_ref() {
                 sender.send(ServerActions::StartSidecar).unwrap();
             }
 
+            // close window
             let window = _app.get_webview_window("main").unwrap();
-
             window.on_window_event(move |event| {
                 if let WindowEvent::CloseRequested { .. } = event {
                     if let Some(child) = cleanup_sidecar_state.lock().unwrap().child.take() {
@@ -268,6 +304,7 @@ pub fn run() {
                 }
             });
 
+            // open devtools in debug build automagiclly
             #[cfg(debug_assertions)]
             {
                 window.open_devtools();

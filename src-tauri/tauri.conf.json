@@ -13,7 +13,8 @@
   "app": {
     "windows": [
       {
-        "title": "rustsync",
+        "label": "main",
+        "title": "RustSync",
         "width": 800,
         "height": 600
       }
