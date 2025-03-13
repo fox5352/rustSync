@@ -39,7 +39,6 @@ export default function SettingsPage() {
       if (session == null) throw new Error("Session not found");
 
       const settings = await updateSettings(data, session, true);
-      console.log(settings);
 
       setSettings(settings);
     } catch (e) {
@@ -62,7 +61,6 @@ export default function SettingsPage() {
   const submitSessionData = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.target as HTMLFormElement);
-    console.log(formData);
 
     const url = formData.get("url")?.toString();
     const token = formData.get("token")?.toString();
@@ -84,8 +82,6 @@ export default function SettingsPage() {
         setIsError(null);
 
         const settings = await getSettings(session);
-
-        console.log(settings.audioPaths);
 
         setSettings(settings);
       } catch (e: any) {
