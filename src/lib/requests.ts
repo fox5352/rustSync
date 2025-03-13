@@ -84,42 +84,36 @@ async function request(
   method: "GET" | "POST" | "PUT",
   session: Session,
   body?: string
-) {
+): Promise<string> {
   if (method == "POST" && (body == undefined || body == null))
     throw new Error("Can't do a post request without a body");
 
-  const headers = new Headers();
-  headers.append("Authorization", session.token);
-  headers.append("Content-Type", "application/json");
-
-  let options = {
+  const res = await invoke<string>("fetch", {
+    url,
     method,
-    headers,
-    body: body,
-  };
+    token: session.token,
+    body,
+  });
 
-  const res = await fetch(`${session.url}/${url}`, options);
+  // const headers = new Headers();
+  // headers.append("Authorization", session.token);
+  // headers.append("Content-Type", "application/json");
+
+  // let options = {
+  //   method,
+  //   headers,
+  //   body: body,
+  // };
+
+  // const res = await fetch(`${session.url}/${url}`, options);
 
   return res;
 }
 
 export async function getSettings(session: Session): Promise<Settings> {
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", `Bearer ${session.token}`);
-  myHeaders.append("Accept", "*/*");
-  myHeaders.append("Content-Type", "application/json");
+  const res = await request("api/settings", "GET", session);
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-  };
-
-  const res = await fetch(`${session.url}/api/settings`, requestOptions);
-
-  if (!res.ok)
-    throw new Error(`failed to request ${res.status}:${res.statusText}`);
-
-  const data = await res.json();
+  const data = await JSON.parse(res);
 
   return data.data.settings as Settings;
 }
@@ -129,23 +123,15 @@ export async function updateSettings(
   session: Session,
   rvop: boolean = false
 ): Promise<Settings | null> {
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", `Bearer ${session.token}`);
-  myHeaders.append("Content-Type", "application/json");
-
-  const requestOptions = {
-    method: "POST",
-    headers: myHeaders,
-    body: JSON.stringify({ settings: updateData }),
-  };
-
-  const res = await fetch(`${session.url}/api/settings`, requestOptions);
-
-  if (!res.ok)
-    throw new Error(`failed to request ${res.status}:${res.statusText}`);
+  const res = await request(
+    "api/settings",
+    "POST",
+    session,
+    JSON.stringify({ settings: updateData })
+  );
 
   if (rvop) {
-    const newSettings = await res.json();
+    const newSettings = await JSON.parse(res);
 
     return newSettings.data.settings;
   } else {
@@ -174,14 +160,14 @@ export async function getFiles<T>(
 ): Promise<[{ data: T; message: string } | null, string | null]> {
   const res = await request(`api/${type}`, "GET", session);
 
-  if (!res.ok) {
-    return [
-      null,
-      `failed to request files type:${type}::${res.status}:${res.statusText}`,
-    ];
-  }
+  // if (!res.ok) {
+  //   return [
+  //     null,
+  //     `failed to request files type:${type}::${res.status}:${res.statusText}`,
+  //   ];
+  // }
 
-  const data = await res.json();
+  const data = JSON.parse(res);
 
   return [data as { data: T; message: string }, null];
 }

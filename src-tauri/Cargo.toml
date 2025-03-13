@@ -26,3 +26,4 @@ tauri-plugin-shell = "2"
 uuid = { version = "1", features = ["v4"] }
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
+reqwest = "0.12.14"

@@ -1,3 +1,6 @@
+use reqwest::Client;
+use serde_json::Value;
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder
@@ -142,7 +145,7 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
         let addr = get_ipv4_addr();
 
         if let Some(addr) = addr {
-            let url = format!("http://{}:9090?token={}", addr, session.token);
+            let url = format!("https://{}:9090?token={}", addr, session.token);
 
             return Some(url);
         }
@@ -150,6 +153,64 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
 
     return None;
 }
+
+
+// requests
+#[tauri::command]
+async fn fetch(
+        state: State<'_, Mutex<Session>>,
+        url: &str,
+        method: &str,
+        token: &str,
+        body: Option<String>,
+    ) -> Result<String, String> {   
+
+    let ip_addr_and_query = get_server_address(state).unwrap();//.split("?").collect::<Vec<&str>>()[0];
+
+    let ip_addr = ip_addr_and_query.split("?").collect::<Vec<&str>>()[0];
+
+    let url = format!("{}/{}",ip_addr, url);
+        
+    let client = Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e.to_string()))?;
+
+   
+
+    let request_builder = (match method.to_uppercase().as_str() {
+        "GET" => client.get(&url),
+        "POST" =>{
+            if let Some(data) = body {
+                client.post(&url).body(data)
+            }else {
+                client.post(&url)
+            }
+        },
+        _ => client.get(&url)
+    }).bearer_auth(token).header("Content-Type", "application/json");
+
+    let request = request_builder.build().map_err(|e| format!("Failed to build request: {}", e.to_string()))?;
+    
+    let res = client.execute(request).await.map_err(|e| format!("Failed to execute request: {}", e.to_string()))?;
+   
+    let json: Value = match res.json().await {
+        Ok(json) => json,
+        Err(e) => return Err(format!("Failed to parse to JSON {}:{}:{}", url, method, e.to_string())),
+    };
+
+   
+
+    let json_string = match serde_json::to_string(&json) {
+        Ok(json_string) => json_string,
+        Err(e) => return Err(format!("Failed to convert to json string {}:{}:{}", url, method, e.to_string())),            
+    };   
+
+    return Ok(json_string);
+
+    // Ok("".to_string())
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -236,7 +297,7 @@ pub fn run() {
                         Ok(msg) => match msg {
                             ServerActions::StartSidecar => {
                                 // start server
-                                println!("{}", _uuid.to_string().clone());
+                               
 
                                 let (mut rx, _child) = sidecar_command
                                     .env("TOKEN", _uuid.to_string())
@@ -315,7 +376,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_server_address,
             toggle_server,
-            get_server_status
+            get_server_status,
+            fetch
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
