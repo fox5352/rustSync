@@ -145,7 +145,7 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
         let addr = get_ipv4_addr();
 
         if let Some(addr) = addr {
-            let url = format!("https://{}:9090?token={}", addr, session.token);
+            let url = format!("http://{}:9090?token={}", addr, session.token);
 
             return Some(url);
         }
