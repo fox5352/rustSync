@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Session } from "../store/session";
+import { decrypt, encrypt } from "./crypto";
 
 export type AllowLst = {
   allowList: string[];
@@ -52,7 +53,14 @@ export type SettingsKeys =
   | "videoExt"
   | "server";
 
+const DEBUG = import.meta.env.VITE_DEBUG == "true" ? true : false;
+
 export async function getSessionData(): Promise<[string, string]> {
+  // DEBUG: for debugging
+  if (DEBUG) {
+    return ["http://localhost:9090", "testing"];
+  }
+
   const res: string | null = await invoke("get_server_address");
 
   if (!res) throw new Error("Failed to get res from backend");
@@ -79,42 +87,41 @@ export async function getSessionData(): Promise<[string, string]> {
  * @throws If getSessionData() fails
  * @throws If the request method is POST and no body is given
  */
-async function request(
+async function request<T>(
   url: string,
   method: "GET" | "POST" | "PUT",
   session: Session,
   body?: string
-): Promise<string> {
+): Promise<T> {
   if (method == "POST" && (body == undefined || body == null))
     throw new Error("Can't do a post request without a body");
 
-  const res = await invoke<string>("fetch", {
-    url,
+  const headers = new Headers();
+  headers.append("Authorization", session.token);
+  headers.append("Content-Type", "application/json");
+
+  let options = {
     method,
-    token: session.token,
-    body,
-  });
+    headers,
+    body: body
+      ? JSON.stringify({
+          encryptedData: encrypt(body, session.token),
+        })
+      : undefined,
+  };
 
-  // const headers = new Headers();
-  // headers.append("Authorization", session.token);
-  // headers.append("Content-Type", "application/json");
+  const res = await fetch(`${session.url}/${url}`, options);
 
-  // let options = {
-  //   method,
-  //   headers,
-  //   body: body,
-  // };
-
-  // const res = await fetch(`${session.url}/${url}`, options);
-
-  return res;
+  const data = decrypt(await res.json(), session.token);
+  return data as T;
 }
 
 export async function getSettings(session: Session): Promise<Settings> {
-  const res = await request("api/settings", "GET", session);
-
-  const data = await JSON.parse(res);
-
+  const data = await request<{ data: { settings: Settings } }>(
+    "api/settings",
+    "GET",
+    session
+  );
   return data.data.settings as Settings;
 }
 
@@ -123,15 +130,17 @@ export async function updateSettings(
   session: Session,
   rvop: boolean = false
 ): Promise<Settings | null> {
-  const res = await request(
+  const data = JSON.stringify({ settings: updateData });
+
+  const res = await request<{ data: { settings: Settings } }>(
     "api/settings",
     "POST",
     session,
-    JSON.stringify({ settings: updateData })
+    data
   );
 
   if (rvop) {
-    const newSettings = await JSON.parse(res);
+    const newSettings = res;
 
     return newSettings.data.settings;
   } else {
@@ -158,16 +167,7 @@ export async function getFiles<T>(
   type: string,
   session: Session
 ): Promise<[{ data: T; message: string } | null, string | null]> {
-  const res = await request(`api/${type}`, "GET", session);
-
-  // if (!res.ok) {
-  //   return [
-  //     null,
-  //     `failed to request files type:${type}::${res.status}:${res.statusText}`,
-  //   ];
-  // }
-
-  const data = JSON.parse(res);
+  const data = await request<T>(`api/${type}`, "GET", session);
 
   return [data as { data: T; message: string }, null];
 }
@@ -181,6 +181,10 @@ export async function toggleServerState(): Promise<boolean | null> {
 }
 
 export async function getServerStatus(): Promise<boolean | null> {
+  // DEBUG: for debugging
+  if (DEBUG) {
+    return true;
+  }
   return await invoke<boolean>("get_server_status").catch((error) => {
     console.error("failed on getServerStatus", error);
     return null;

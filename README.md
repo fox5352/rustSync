@@ -84,6 +84,8 @@ After installation, follow these steps to get RustSync up and running:
 
 We welcome contributions! If you have ideas or spot issues, feel free to **open an issue** or **submit a pull request**.
 
+[Heres a guide on setting up the project](/docs/Setup.md/#installation)
+
 ---
 
 ## License

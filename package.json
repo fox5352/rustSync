@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "install:all": "npm ci && npm fund && cd server && npm ci && npm fund && cd ..",
+    "dev:server": "cd server && npm run dev",
     "dev": "vite",
+    "dev:all": "cross-env VITE_DEBUG=true VITE_TOKEN=testing start npm run dev & start npm run dev:server",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
@@ -24,6 +27,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2.2.0",
     "axios": "^1.8.3",
+    "crypto-js": "^4.2.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -33,7 +37,9 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "@tauri-apps/cli": "^2",
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

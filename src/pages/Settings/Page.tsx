@@ -35,6 +35,7 @@ export default function SettingsPage() {
     const data = {
       [key]: list,
     };
+
     try {
       if (session == null) throw new Error("Session not found");
 
@@ -94,6 +95,7 @@ export default function SettingsPage() {
         setIsLoading(false);
       }
     };
+
     fetchSettings();
   }, [isServerLive]);
 
