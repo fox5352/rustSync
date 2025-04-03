@@ -222,7 +222,7 @@ export default function SettingsPage() {
           >
             <CircularProgress size={78} />
           </Box>
-        ) : isServerLive ? (
+        ) : isServerLive || override ? (
           <>
             <ViewBox
               label="Audio Paths"
