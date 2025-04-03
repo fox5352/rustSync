@@ -25,7 +25,7 @@ import InputBox from "./ui/InputBox";
 import { useSession } from "../../store/session";
 
 export default function SettingsPage() {
-  const { session, overide, toggleOveride, setSession } = useSession();
+  const { session, override, toggleOverride, setSession } = useSession();
   const [isServerLive, setIsServerLive] = useState<boolean>(false);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [isError, setIsError] = useState<StateError | null>(null);
@@ -74,7 +74,7 @@ export default function SettingsPage() {
   useEffect(() => {
     ///-----------------------------------------------
     const fetchSettings = async () => {
-      if (overide == false && !isServerLive) return;
+      if (override == false && !isServerLive) return;
 
       try {
         if (session == null) throw new Error("Session not found");
@@ -101,9 +101,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     getServerStatus().then((res) => {
-      if (res == null) return;
-
-      setIsServerLive(res);
+      if (res != null && res != isServerLive) setIsServerLive(res);
     });
   }, []);
 
@@ -134,6 +132,7 @@ export default function SettingsPage() {
           </Button>
         </Box>
         <Divider />
+        {/* server override section */}
         <Box component="form" onSubmit={submitSessionData}>
           <Box
             sx={{
@@ -192,20 +191,22 @@ export default function SettingsPage() {
                   width: "160px",
                 }}
                 variant="contained"
-                color={overide ? "warning" : "primary"}
+                color={override ? "warning" : "primary"}
                 size="small"
                 onClick={(e) => {
                   e.preventDefault();
-                  toggleOveride();
+                  toggleOverride();
                 }}
               >
-                {overide ? "desable overide" : "enable overide"}
+                {override ? "desable override" : "enable override"}
               </Button>
             </Box>
           </Box>
         </Box>
         <Divider />
+        {/* error alert section */}
         {isError ? <Alert severity="error">{isError.message}</Alert> : <></>}
+        {/* server settings section */}
         {isLoading ? (
           <Box
             sx={{
@@ -221,7 +222,7 @@ export default function SettingsPage() {
           >
             <CircularProgress size={78} />
           </Box>
-        ) : (
+        ) : isServerLive || override ? (
           <>
             <ViewBox
               label="Audio Paths"
@@ -270,6 +271,8 @@ export default function SettingsPage() {
               updatedFunc={updateFunction}
             />
           </>
+        ) : (
+          <></>
         )}
       </Container>
     </>

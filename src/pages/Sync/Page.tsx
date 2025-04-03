@@ -10,7 +10,7 @@ import { getServerStatus, getSessionData } from "../../lib/requests";
 import { useSession } from "../../store/session";
 
 export default function Sync() {
-  const { session, overide, setSession } = useSession();
+  const { session, override, setSession } = useSession();
   const [isServerLive, setIsServerLive] = useState(true);
   const [address, setAddress] = useState<{
     addr: string;
@@ -27,7 +27,7 @@ export default function Sync() {
     const fetchServerStatus = async () => {
       const serverState = await getServerStatus();
 
-      if (overide && session != null) {
+      if (override && session != null) {
         setIsServerLive(true);
         return;
       }
@@ -36,7 +36,7 @@ export default function Sync() {
     };
 
     fetchServerStatus();
-  }, [overide]);
+  }, [override]);
 
   const resetSession = async () => {
     const [url, token] = await getSessionData();

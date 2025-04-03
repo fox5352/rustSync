@@ -7,18 +7,18 @@ export type Session = {
 
 type SessionStore = {
   session: Session | null;
-  overide: boolean;
+  override: boolean;
   setSession: (session: Session | null) => void;
-  toggleOveride: () => void;
+  toggleOverride: () => void;
 };
 
 export const useSession = create<SessionStore>()((set) => ({
   session: null,
-  overide: false,
+  override: false,
   setSession: (session) => {
     set({ session });
   },
-  toggleOveride: () => {
-    set((prev) => ({ overide: !prev.overide }));
+  toggleOverride: () => {
+    set((prev) => ({ override: !prev.override }));
   },
 }));
