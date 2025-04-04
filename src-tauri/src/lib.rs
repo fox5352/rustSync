@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use tauri::{
     menu::{Menu, MenuItem},
-    tray::TrayIconBuilder
+    tray::TrayIconBuilder,
 };
 use tauri_plugin_shell::process::{Command, CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
@@ -154,63 +154,77 @@ fn get_server_address(state: State<'_, Mutex<Session>>) -> Option<String> {
     return None;
 }
 
-
 // requests
 #[tauri::command]
 async fn fetch(
-        state: State<'_, Mutex<Session>>,
-        url: &str,
-        method: &str,
-        token: &str,
-        body: Option<String>,
-    ) -> Result<String, String> {   
-
-    let ip_addr_and_query = get_server_address(state).unwrap();//.split("?").collect::<Vec<&str>>()[0];
+    state: State<'_, Mutex<Session>>,
+    url: &str,
+    method: &str,
+    token: &str,
+    body: Option<String>,
+) -> Result<String, String> {
+    let ip_addr_and_query = get_server_address(state).unwrap(); //.split("?").collect::<Vec<&str>>()[0];
 
     let ip_addr = ip_addr_and_query.split("?").collect::<Vec<&str>>()[0];
 
-    let url = format!("{}/{}",ip_addr, url);
-        
+    let url = format!("{}/{}", ip_addr, url);
+
     let client = Client::builder()
         .danger_accept_invalid_certs(true)
         .build()
         .map_err(|e| format!("Failed to create client: {}", e.to_string()))?;
 
-   
-
     let request_builder = (match method.to_uppercase().as_str() {
         "GET" => client.get(&url),
-        "POST" =>{
+        "POST" => {
             if let Some(data) = body {
                 client.post(&url).body(data)
-            }else {
+            } else {
                 client.post(&url)
             }
-        },
-        _ => client.get(&url)
-    }).bearer_auth(token).header("Content-Type", "application/json");
+        }
+        _ => client.get(&url),
+    })
+    .bearer_auth(token)
+    .header("Content-Type", "application/json");
 
-    let request = request_builder.build().map_err(|e| format!("Failed to build request: {}", e.to_string()))?;
-    
-    let res = client.execute(request).await.map_err(|e| format!("Failed to execute request: {}", e.to_string()))?;
-   
+    let request = request_builder
+        .build()
+        .map_err(|e| format!("Failed to build request: {}", e.to_string()))?;
+
+    let res = client
+        .execute(request)
+        .await
+        .map_err(|e| format!("Failed to execute request: {}", e.to_string()))?;
+
     let json: Value = match res.json().await {
         Ok(json) => json,
-        Err(e) => return Err(format!("Failed to parse to JSON {}:{}:{}", url, method, e.to_string())),
+        Err(e) => {
+            return Err(format!(
+                "Failed to parse to JSON {}:{}:{}",
+                url,
+                method,
+                e.to_string()
+            ))
+        }
     };
-
-   
 
     let json_string = match serde_json::to_string(&json) {
         Ok(json_string) => json_string,
-        Err(e) => return Err(format!("Failed to convert to json string {}:{}:{}", url, method, e.to_string())),            
-    };   
+        Err(e) => {
+            return Err(format!(
+                "Failed to convert to json string {}:{}:{}",
+                url,
+                method,
+                e.to_string()
+            ))
+        }
+    };
 
     return Ok(json_string);
 
     // Ok("".to_string())
 }
-
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -239,6 +253,7 @@ pub fn run() {
     let _sidecar_thread: Option<JoinHandle<()>> = None;
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
@@ -247,6 +262,10 @@ pub fn run() {
         .setup(move |_app| {
             let app = _app.handle().clone();
 
+             #[cfg(desktop)]
+            let _ = app.app_handle().plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, Some(vec!["--flag1", "--flag2"]) /* arbitrary number of args to pass to your app */));
+            
+
             // tray icon menu
             let show_i = MenuItem::with_id(_app, "show", "Show", true, None::<&str>)?;
 
@@ -254,8 +273,7 @@ pub fn run() {
 
             let quit_i = MenuItem::with_id(_app, "quit", "Quit", true, None::<&str>)?;
 
-            
-            let tray_menu = Menu::with_items(_app, &[&show_i,&hide_i,&quit_i])?;
+            let tray_menu = Menu::with_items(_app, &[&show_i, &hide_i, &quit_i])?;
 
             let _ = TrayIconBuilder::new()
                 .menu(&tray_menu)
@@ -263,20 +281,20 @@ pub fn run() {
                 .on_menu_event(|_app, event| match event.id.as_ref() {
                     "quit" => {
                         _app.exit(0);
-                    },
+                    }
                     "show" => {
                         _app.get_webview_window("main").unwrap().show().unwrap();
-                    },
+                    }
                     "hide" => {
                         _app.get_webview_window("main").unwrap().hide().unwrap();
-                    },
-                    _=> {
+                    }
+                    _ => {
                         eprintln!("event not recognized");
                     }
                 })
                 .show_menu_on_left_click(false)
                 .build(_app)?;
-        
+
             // server sidecar spawner
             thread::spawn(move || {
                 loop {
@@ -297,7 +315,6 @@ pub fn run() {
                         Ok(msg) => match msg {
                             ServerActions::StartSidecar => {
                                 // start server
-                               
 
                                 let (mut rx, _child) = sidecar_command
                                     .env("TOKEN", _uuid.to_string())

@@ -23,13 +23,35 @@ import {
 } from "../../lib/requests";
 import InputBox from "./ui/InputBox";
 import { useSession } from "../../store/session";
+import {
+  AppSettingsKeys,
+  getAppSettings,
+  updateAppSettings,
+} from "../../model/settings.model";
+import { manageAppSettings } from "../../lib/settings";
 
 export default function SettingsPage() {
   const { session, override, toggleOverride, setSession } = useSession();
+  // app settings
+  const [isAppSettingsLoading, setIsAppSettingsLoading] = useState(false);
+  const [isAutoStartEnabled, setIsAutoStartEnabled] = useState<boolean>(false);
+  // server settings
   const [isServerLive, setIsServerLive] = useState<boolean>(false);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [isError, setIsError] = useState<StateError | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const toggleAutoStart = async () => {
+    const newVal = !isAutoStartEnabled;
+
+    const res = await updateAppSettings(AppSettingsKeys.AUTO_START, newVal);
+
+    if (res) {
+      await manageAppSettings();
+
+      setIsAutoStartEnabled((prev) => !prev);
+    }
+  };
 
   const updateFunction = async (key: SettingsKeys, list: string[]) => {
     const data = {
@@ -103,6 +125,18 @@ export default function SettingsPage() {
     getServerStatus().then((res) => {
       if (res != null && res != isServerLive) setIsServerLive(res);
     });
+
+    const appSettings = async () => {
+      setIsAppSettingsLoading(true);
+      const settings = await getAppSettings();
+      if (!settings) return;
+
+      if (settings.autoStart == true) setIsAutoStartEnabled(settings.autoStart);
+
+      setIsAppSettingsLoading(false);
+    };
+
+    appSettings();
   }, []);
 
   return (
@@ -130,6 +164,67 @@ export default function SettingsPage() {
           <Button variant="contained" onClick={toggleServer}>
             toggle
           </Button>
+        </Box>
+        <Divider />
+        {/* app settings section */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            py: 2,
+            my: 2,
+            borderRadius: 1.5,
+          }}
+        >
+          {isAppSettingsLoading ? (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                p: 2,
+                my: 10,
+                textAlign: "center",
+              }}
+            >
+              <CircularProgress size={78} />
+            </Box>
+          ) : (
+            <>
+              <Typography
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  width: "fit-content",
+                  px: 1,
+                }}
+                variant="h5"
+                component="legend"
+              >
+                Auto start
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Typography variant="body1">
+                  Enabled:{" " + isAutoStartEnabled}
+                </Typography>
+                <Button
+                  variant={isAutoStartEnabled ? "contained" : "outlined"}
+                  onClick={toggleAutoStart}
+                >
+                  Toggle
+                </Button>
+              </Box>
+            </>
+          )}
         </Box>
         <Divider />
         {/* server override section */}
