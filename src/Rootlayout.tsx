@@ -6,6 +6,7 @@ import Navbar from "./ui/Navbar";
 
 import { useSession } from "./store/session";
 import { getSessionData } from "./lib/requests";
+import { manageAppSettings } from "./lib/settings";
 
 export default function Rootlayout() {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -28,6 +29,7 @@ export default function Rootlayout() {
     };
 
     manageSession();
+    manageAppSettings();
   }, []);
 
   return (
